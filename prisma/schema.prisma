@@ -1,0 +1,74 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Material_Type {
+  id         Int        @id @default(autoincrement())
+  type_name  String     @unique
+  created_at DateTime   @default(now())
+  Meterials  Material[]
+  Orders     Order[]
+}
+
+model Material {
+  id               Int                    @id @default(autoincrement())
+  material_name    String                 @unique
+  price            Int
+  material_type_id Int
+  created_at       DateTime               @default(now())
+  Material_Type    Material_Type          @relation(fields: [material_type_id], references: [id], onDelete: Cascade)
+  Suppliers        MaterialsOnSuppliers[]
+  Orders           Order[]                @relation("OrderToMaterial")
+
+  @@index([material_name])
+  @@index([material_type_id])
+}
+
+model Supplier {
+  id            Int                    @id @default(autoincrement())
+  supplier_name String
+  addresses     String[]
+  created_at    DateTime               @default(now())
+  Materials     MaterialsOnSuppliers[]
+  Orders        Order[]
+}
+
+model MaterialsOnSuppliers {
+  id          Int      @id @default(autoincrement())
+  material_id Int
+  supplier_id Int
+  created_at  DateTime @default(now())
+  Material    Material @relation(fields: [material_id], references: [id], onDelete: Cascade)
+  Supplier    Supplier @relation(fields: [supplier_id], references: [id], onDelete: Cascade)
+
+  @@unique([material_id, supplier_id])
+  @@index([material_id])
+  @@index([supplier_id])
+}
+
+enum Status {
+  Pending
+  Approved
+  Shipping
+  Delivered
+  Completed
+  Canceled
+}
+
+model Order {
+  id               Int           @id @default(autoincrement())
+  supplier_id      Int?
+  material_type_id Int
+  status           Status        @default(Pending)
+  Supplier         Supplier?     @relation(fields: [supplier_id], references: [id], onDelete: Cascade)
+  Material_Type    Material_Type @relation(fields: [material_type_id], references: [id], onDelete: Cascade)
+  Materials        Material[]    @relation("OrderToMaterial")
+  total_cost       Int
+  created_at       DateTime      @default(now())
+  updated_at       DateTime      @updatedAt()
+}
