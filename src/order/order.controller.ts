@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common';
 import { OrderService } from './order.service';
 import { CreateOrderDto } from './dtos/create-order.dto';
-import { Prisma, Status } from '@prisma/client';
+import { OrderType, Prisma, Status } from '@prisma/client';
 import { UpdateOrderDto } from './dtos/update-order.dto';
 
 @Controller('order')
@@ -22,15 +22,20 @@ export class OrderController {
   async createOrder(@Body() body: CreateOrderDto) {
     try {
       const data: Prisma.OrderUncheckedCreateInput = {
-        material_type_id: body.material_type_id,
-        total_cost: body.total_cost,
+        order_type: body.order_type as OrderType,
+        supplier_id: body.supplier_id,
+        address: body.address,
         Materials: {
-          connect: body.material_ids.map((id) => ({ id })),
+          create: body.material_id_qtys.map((mq) => ({
+            material_id: mq.material_id,
+            quantity: mq.quantity,
+          })),
+        },
+        Material_Types: {
+          connect: body.material_type_ids.map((id) => ({ id })),
         },
       };
-      if (body.supplier_id) {
-        data.supplier_id = body.supplier_id;
-      }
+
       const newOrder = await this.orderService.create(data);
       return newOrder;
     } catch (error) {
@@ -62,33 +67,35 @@ export class OrderController {
       }
 
       const order = await this.orderService.findUnique({ id });
+
       if (!order?.id) {
         throw new NotFoundException('No order to update!');
       }
 
-      let updatedOrder = await this.orderService.update(
-        { id },
-        {
-          Materials: {
-            disconnect: order.Materials.map((m) => ({ id: m.id })),
-          },
-        },
-      );
-
       const data: Prisma.OrderUncheckedUpdateInput = {
-        material_type_id: body.material_type_id,
-        status: body.status as Status,
-        total_cost: body.total_cost,
-        Materials: {
-          connect: body.material_ids.map((id) => ({ id })),
-        },
+        order_type: body.order_type as OrderType,
+        address: body.address,
+        supplier_id: body.supplier_id,
       };
 
-      if (body.supplier_id) {
-        data.supplier_id = body.supplier_id;
+      if (body.material_id_qtys?.length > 0) {
+        data.Materials = {
+          delete: order.Materials.map((mq) => ({ id: mq.id })),
+          create: body.material_id_qtys.map((mq) => ({
+            material_id: mq.material_id,
+            quantity: mq.quantity,
+          })),
+        };
       }
 
-      updatedOrder = await this.orderService.update({ id }, data);
+      if (body.material_type_ids?.length > 0) {
+        data.Material_Types = {
+          disconnect: order.Material_Types.map((t) => ({ id: t.id })),
+          connect: body.material_type_ids.map((t) => ({ id: t })),
+        };
+      }
+
+      const updatedOrder = await this.orderService.update({ id }, data);
       return updatedOrder;
     } catch (error) {
       console.log('/order/:id | put: ', error.message);

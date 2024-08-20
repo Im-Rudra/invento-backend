@@ -17,8 +17,8 @@ export class SupplierService {
     const suppliers = await this.prisma.supplier.findMany({
       include: {
         Materials: {
-          select: {
-            id: true,
+          include: {
+            Supplier: true,
             Material: true,
           },
         },

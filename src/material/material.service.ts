@@ -18,8 +18,7 @@ export class MaterialService {
       include: {
         Material_Type: true,
         Suppliers: {
-          select: {
-            id: true,
+          include: {
             Supplier: true,
           },
         },

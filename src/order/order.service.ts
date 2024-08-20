@@ -14,9 +14,13 @@ export class OrderService {
   async findAll() {
     const orders = await this.prisma.order.findMany({
       include: {
-        Materials: true,
+        Materials: {
+          include: {
+            Material: true,
+          },
+        },
         Supplier: true,
-        Material_Type: true,
+        Material_Types: true,
       },
     });
     return orders;
@@ -28,7 +32,7 @@ export class OrderService {
       include: {
         Materials: true,
         Supplier: true,
-        Material_Type: true,
+        Material_Types: true,
       },
     });
     return order;

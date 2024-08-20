@@ -12,7 +12,7 @@ model Material_Type {
   type_name  String     @unique
   created_at DateTime   @default(now())
   Meterials  Material[]
-  Orders     Order[]
+  Orders     Order[]    @relation("OrderToMaterialType")
 }
 
 model Material {
@@ -23,7 +23,7 @@ model Material {
   created_at       DateTime               @default(now())
   Material_Type    Material_Type          @relation(fields: [material_type_id], references: [id], onDelete: Cascade)
   Suppliers        MaterialsOnSuppliers[]
-  Orders           Order[]                @relation("OrderToMaterial")
+  Orders           OrderMaterials[]
 
   @@index([material_name])
   @@index([material_type_id])
@@ -60,15 +60,33 @@ enum Status {
   Canceled
 }
 
+enum OrderType {
+  by_materials
+  by_suppliers
+}
+
 model Order {
-  id               Int           @id @default(autoincrement())
-  supplier_id      Int?
-  material_type_id Int
-  status           Status        @default(Pending)
-  Supplier         Supplier?     @relation(fields: [supplier_id], references: [id], onDelete: Cascade)
-  Material_Type    Material_Type @relation(fields: [material_type_id], references: [id], onDelete: Cascade)
-  Materials        Material[]    @relation("OrderToMaterial")
-  total_cost       Int
-  created_at       DateTime      @default(now())
-  updated_at       DateTime      @updatedAt()
+  id             Int              @id @default(autoincrement())
+  order_type     OrderType
+  supplier_id    Int
+  status         Status           @default(Pending)
+  address        String
+  Supplier       Supplier?        @relation(fields: [supplier_id], references: [id], onDelete: Cascade)
+  Material_Types Material_Type[]  @relation("OrderToMaterialType")
+  Materials      OrderMaterials[]
+  created_at     DateTime         @default(now())
+  updated_at     DateTime         @updatedAt()
+}
+
+model OrderMaterials {
+  id          Int      @id @default(autoincrement())
+  order_id    Int
+  material_id Int
+  quantity    Int
+  Order       Order    @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  Material    Material @relation(fields: [material_id], references: [id], onDelete: Cascade)
+
+  @@unique([order_id, material_id])
+  @@index([order_id])
+  @@index([material_id])
 }

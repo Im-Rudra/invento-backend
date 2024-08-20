@@ -1,26 +1,31 @@
+import { Type } from 'class-transformer';
 import {
+  ArrayNotEmpty,
   IsArray,
+  IsEnum,
   IsInt,
-  IsNumber,
   IsOptional,
   IsString,
 } from 'class-validator';
+import { MaterialIdQtys, OrderType } from './create-order.dto';
 
 export class UpdateOrderDto {
-  @IsNumber()
-  material_type_id: number;
+  @IsEnum(OrderType)
+  order_type: string;
 
-  @IsNumber()
-  total_cost: number;
-
-  @IsOptional()
-  @IsNumber()
+  @IsInt()
   supplier_id: number;
 
+  @IsString()
+  address: string;
+
+  @IsOptional()
   @IsArray()
   @IsInt({ each: true })
-  material_ids: number[];
+  material_type_ids: number[];
 
-  @IsString()
-  status: string;
+  @IsOptional()
+  @IsArray()
+  @Type(() => MaterialIdQtys)
+  material_id_qtys: MaterialIdQtys[];
 }
